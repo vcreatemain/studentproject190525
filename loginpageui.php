@@ -17,7 +17,7 @@ if ($email && $password) {
         
         if (password_verify($password, $hashedPassword)) {
             $_SESSION['user_id'] = $id;
-            header("Location: index.php");
+            header("Location: dashboard.php");
         } else {
             echo "Invalid credentials.";
         }

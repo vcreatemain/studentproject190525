@@ -14,7 +14,7 @@ if ($name && $email && $password) {
 
     if ($stmt->execute()) {
         $_SESSION['user_id'] = $stmt->insert_id;
-        header("Location: index.php");
+        header("Location: dashboard.php");
     } else {
         echo "Error: " . $stmt->error;
     }
