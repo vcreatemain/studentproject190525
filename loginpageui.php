@@ -17,7 +17,8 @@ if ($email && $password) {
         
         if (password_verify($password, $hashedPassword)) {
             $_SESSION['user_id'] = $id;
-            header("Location: dashboard.php");
+            setcookie("user_id", $id, time() + (7 * 24 * 60 * 60), "/");
+            header("Location: index.php");
         } else {
             echo "Invalid credentials.";
         }

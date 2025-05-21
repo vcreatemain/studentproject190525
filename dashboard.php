@@ -1,8 +1,27 @@
 <?php
 
-include 'auth.php';?>
+include 'auth.php';
+include 'db.php';
+
+$userid = $_COOKIE['user_id'];
+$sql = "SELECT steps FROM user_health_data WHERE userid = '$userid' ORDER BY submission_date DESC LIMIT 7";
+$result = $conn->query($sql);
+
+$steps = [];
+while ($row = $result->fetch_assoc()) {
+    $steps[] = (int) $row['steps']; // Convert to int if needed
+}
+
+// Reverse if you want oldest to newest
+$steps = array_reverse($steps);
+
+// Send it to JS
+$stepsdata =  json_encode($steps);
+
+?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -92,7 +111,8 @@ include 'auth.php';?>
             color: var(--primary-color);
         }
 
-        input, select {
+        input,
+        select {
             width: 100%;
             padding: 12px 15px;
             border: 1px solid #ddd;
@@ -101,7 +121,8 @@ include 'auth.php';?>
             transition: var(--transition);
         }
 
-        input:focus, select:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--secondary-color);
             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
@@ -518,6 +539,7 @@ include 'auth.php';?>
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -532,9 +554,11 @@ include 'auth.php';?>
             0% {
                 transform: scale(1);
             }
+
             50% {
                 transform: scale(1.05);
             }
+
             100% {
                 transform: scale(1);
             }
@@ -597,21 +621,21 @@ include 'auth.php';?>
             .grid {
                 grid-template-columns: 1fr;
             }
-            
+
             .form-row {
                 flex-direction: column;
                 gap: 10px;
             }
-            
+
             .form-row .form-group {
                 margin-bottom: 10px;
             }
-            
+
             .user-profile {
                 flex-direction: column;
                 text-align: center;
             }
-            
+
             .user-avatar {
                 margin-right: 0;
                 margin-bottom: 15px;
@@ -625,7 +649,8 @@ include 'auth.php';?>
             margin-top: 15px;
         }
 
-        .food-log-table th, .food-log-table td {
+        .food-log-table th,
+        .food-log-table td {
             padding: 10px;
             border-bottom: 1px solid #ecf0f1;
             text-align: left;
@@ -690,14 +715,46 @@ include 'auth.php';?>
             background: #f39c12;
             width: 0;
             transition: width 1s ease;
-        }
+        }     .btn-home {
+    background-color: var(--teal);
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    margin-top: 15px;
+    display: inline-flex;
+    align-items: center;
+    font-weight: 500;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.btn-home:hover {
+    background-color: var(--light-teal);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.btn-home i {
+    margin-right: 8px;
+}
+
+@media (max-width: 768px) {
+    .btn-home {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>Health Matrix Dashboard</h1>
             <p>Track your health metrics and get personalized recommendations</p>
+
+            <a href="index.php" class="btn btn-home" id="goHomeBtn"><i class="fas fa-home"></i> Go Home</a>
         </div>
 
         <!-- User Registration Form -->
@@ -714,7 +771,7 @@ include 'auth.php';?>
                         <input type="number" id="age" name="age" placeholder="Enter your age" min="1" max="120" required>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="gender">Gender</label>
@@ -730,7 +787,7 @@ include 'auth.php';?>
                         <input type="number" id="height" name="height" placeholder="Enter your height in cm" min="50" max="250" required>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="weight">Weight (kg)</label>
@@ -741,7 +798,7 @@ include 'auth.php';?>
                         <input type="number" id="oxygen" name="oxygen" placeholder="Enter your oxygen level" min="50" max="100" required>
                     </div>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="systolic">Systolic Blood Pressure (mmHg)</label>
@@ -752,13 +809,13 @@ include 'auth.php';?>
                         <input type="number" id="diastolic" name="diastolic" placeholder="Enter diastolic pressure" min="40" max="150" required>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label for="steps">Steps Walked Today</label>
                     <input type="number" id="steps" name="steps" placeholder="Enter steps walked" min="0" required>
                 </div>
-                
-                <button type="submit">Generate Health Dashboard</button>
+
+                <button type="submit">Generate Health Dashboard </button>
             </form>
         </div>
 
@@ -770,7 +827,7 @@ include 'auth.php';?>
                 <div class="user-details">
                     <h2 id="user-name">User Name</h2>
                     <div class="user-meta">
-                        <span id="user-age-gender">30 years, Male</span> • 
+                        <span id="user-age-gender">30 years, Male</span> •
                         <span id="user-height-weight">175 cm, 70 kg</span>
                     </div>
                 </div>
@@ -828,7 +885,6 @@ include 'auth.php';?>
                     <div class="tabs">
                         <div class="tab active" data-tab="steps">Steps</div>
                         <div class="tab" data-tab="calories">Calories</div>
-                        <div class="tab" data-tab="water">Water</div>
                     </div>
                     <div class="tab-content active" id="steps-tab">
                         <div class="chart-container">
@@ -964,6 +1020,28 @@ include 'auth.php';?>
                                 </thead>
                                 <tbody id="meal-history-table">
                                     <!-- Meal history will be populated here -->
+                                 <?php
+include 'db.php';
+                                    $today = date('Y-m-d');
+
+                                    $sql = "SELECT m.meal_type, f.food_name, f.calories, f.portion
+        FROM meals m
+        JOIN meal_food_items f ON m.meal_id = f.meal_id";
+
+                                    $stmt = $conn->prepare($sql);
+                                    $stmt->execute();
+                                    $result = $stmt->get_result();
+
+                                    while ($row = $result->fetch_assoc()) {
+                                        echo "<tr>";
+                                        echo "<td>" . htmlspecialchars($row['meal_type']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($row['food_name']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($row['calories']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($row['portion']) . "</td>";
+                                        echo "</tr>";
+                                    }
+                                    ?>
+
                                 </tbody>
                             </table>
                         </div>
@@ -1236,36 +1314,36 @@ include 'auth.php';?>
         const waterAddBtn = document.querySelector('.water-add');
         const waterLevelEl = document.querySelector('.water-level');
         const waterCounterEl = document.querySelector('.water-counter');
-        
+
         // Global variables
         let userData = {};
         let waterGlasses = 2;
         let maxWaterGlasses = 8;
         let mealLog = [];
-        
+
         // Tab functionality
         document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', function() {
                 const tabName = this.getAttribute('data-tab');
                 const tabContainer = this.closest('.tabs').parentElement;
-                
+
                 // Remove active class from all tabs and contents in this container
                 tabContainer.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 tabContainer.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
+
                 // Add active class to clicked tab and corresponding content
                 this.classList.add('active');
                 tabContainer.querySelector(`#${tabName}-tab`).classList.add('active');
             });
         });
-        
+
         // Handle form submission
         userForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
+
             // Collect form data
             userData = {
-                userid: '<?=$_SESSION['user_id'];?>',
+                userid: '<?= $_SESSION['user_id']; ?>',
                 name: document.getElementById('name').value,
                 age: parseInt(document.getElementById('age').value),
                 gender: document.getElementById('gender').value,
@@ -1276,49 +1354,50 @@ include 'auth.php';?>
                 diastolic: parseInt(document.getElementById('diastolic').value),
                 steps: parseInt(document.getElementById('steps').value)
             };
-                sendDataToServer(userData);
+            sendDataToServer(userData);
             // Calculate health metrics
             calculateHealthMetrics();
-            
+
             // Update dashboard with user data
             updateDashboard();
-            
+
             // Hide registration form and show dashboard
             registrationForm.style.display = 'none';
             healthDashboard.style.display = 'block';
-            
+
             // Initialize charts
             initCharts();
-            
+
             // Set water reminder
             setWaterReminder();
         });
+
         function sendDataToServer(data) {
-    fetch('submitdata.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    })
-    .catch(error => {
-        console.error('Error:', error);
-    });
-}
+            fetch('submitdata.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
 
         // Calculate BMI, BMR and other health metrics
         function calculateHealthMetrics() {
             // Calculate BMI = weight(kg) / (height(m))²
             const heightInMeters = userData.height / 100;
             userData.bmi = userData.weight / (heightInMeters * heightInMeters);
-            
+
             // Calculate BMR using Mifflin-St Jeor Equation
             if (userData.gender === 'male') {
                 userData.bmr = 10 * userData.weight + 6.25 * userData.height - 5 * userData.age + 5;
             } else {
                 userData.bmr = 10 * userData.weight + 6.25 * userData.height - 5 * userData.age - 161;
             }
-            
+
             // Determine BMI status
             if (userData.bmi < 18.5) {
                 userData.bmiStatus = 'Underweight';
@@ -1333,7 +1412,7 @@ include 'auth.php';?>
                 userData.bmiStatus = 'Obese';
                 userData.bmiClass = 'badge-danger';
             }
-            
+
             // Determine Blood Pressure status
             if (userData.systolic < 120 && userData.diastolic < 80) {
                 userData.bpStatus = 'Normal';
@@ -1345,7 +1424,7 @@ include 'auth.php';?>
                 userData.bpStatus = 'High';
                 userData.bpClass = 'badge-danger';
             }
-            
+
             // Determine Oxygen Level status
             if (userData.oxygen >= 95) {
                 userData.oxygenStatus = 'Normal';
@@ -1357,7 +1436,7 @@ include 'auth.php';?>
                 userData.oxygenStatus = 'Low';
                 userData.oxygenClass = 'badge-danger';
             }
-            
+
             // Determine Steps status
             if (userData.steps >= 10000) {
                 userData.stepsStatus = 'Very Active';
@@ -1373,7 +1452,7 @@ include 'auth.php';?>
                 userData.stepsClass = 'badge-danger';
             }
         }
-        
+
         // Update dashboard with user data
         function updateDashboard() {
             // Update user profile
@@ -1381,30 +1460,30 @@ include 'auth.php';?>
             document.getElementById('user-initial').textContent = userData.name.charAt(0).toUpperCase();
             document.getElementById('user-age-gender').textContent = `${userData.age} years, ${userData.gender.charAt(0).toUpperCase() + userData.gender.slice(1)}`;
             document.getElementById('user-height-weight').textContent = `${userData.height} cm, ${userData.weight} kg`;
-            
+
             // Update health metrics
             document.getElementById('bmi-value').textContent = userData.bmi.toFixed(1);
             document.getElementById('bmi-status').textContent = userData.bmiStatus;
             document.getElementById('bmi-status').className = `stat-badge ${userData.bmiClass}`;
-            
+
             document.getElementById('bmr-value').textContent = Math.round(userData.bmr);
-            
+
             document.getElementById('bp-value').textContent = `${userData.systolic}/${userData.diastolic}`;
             document.getElementById('bp-status').textContent = userData.bpStatus;
             document.getElementById('bp-status').className = `stat-badge ${userData.bpClass}`;
-            
+
             document.getElementById('oxygen-value').textContent = `${userData.oxygen}%`;
             document.getElementById('oxygen-status').textContent = userData.oxygenStatus;
             document.getElementById('oxygen-status').className = `stat-badge ${userData.oxygenClass}`;
-            
+
             document.getElementById('steps-value').textContent = userData.steps.toLocaleString();
             document.getElementById('steps-status').textContent = userData.stepsStatus;
             document.getElementById('steps-status').className = `stat-badge ${userData.stepsClass}`;
-            
+
             // Update recommendations based on user data
             updateRecommendations();
         }
-        
+
         // Update personalized recommendations
         function updateRecommendations() {
             // Steps recommendation
@@ -1418,7 +1497,7 @@ include 'auth.php';?>
             } else {
                 stepsRecommendation.textContent = "Excellent! You've reached the recommended 10,000 steps. Keep up the good work!";
             }
-            
+
             // Calories recommendation
             const caloriesRecommendation = document.getElementById('calories-recommendation');
             let activityMultiplier = 1.2; // Sedentary
@@ -1429,15 +1508,15 @@ include 'auth.php';?>
             } else if (userData.steps >= 5000) {
                 activityMultiplier = 1.375; // Lightly active
             }
-            
+
             const tdee = Math.round(userData.bmr * activityMultiplier);
             caloriesRecommendation.textContent = `Based on your activity level, you need approximately ${tdee} calories daily for maintenance.`;
-            
+
             // Water recommendation
             const waterRecommendation = document.getElementById('water-recommendation');
             const waterIntake = Math.round(userData.weight * 0.033); // 33ml per kg of body weight
             waterRecommendation.textContent = `Aim to drink about ${waterIntake} liters of water daily for optimal hydration.`;
-            
+
             // Sleep recommendation
             const sleepRecommendation = document.getElementById('sleep-recommendation');
             if (userData.age < 18) {
@@ -1448,21 +1527,13 @@ include 'auth.php';?>
                 sleepRecommendation.textContent = "Older adults need 7-8 hours of sleep and may benefit from a short daytime nap.";
             }
         }
-        
+
         // Initialize charts
         function initCharts() {
             // Steps Chart - Last 7 days
             const stepsCtx = document.getElementById('steps-chart').getContext('2d');
-            const stepsData = [
-                Math.round(userData.steps * 0.9),
-                Math.round(userData.steps * 0.8),
-                Math.round(userData.steps * 1.1),
-                Math.round(userData.steps * 0.95),
-                Math.round(userData.steps * 0.85),
-                Math.round(userData.steps * 1.05),
-                userData.steps
-            ];
-            
+            const stepsData = '<?= $stepsdata; ?>';
+
             const stepsChart = new Chart(stepsCtx, {
                 type: 'line',
                 data: {
@@ -1501,12 +1572,12 @@ include 'auth.php';?>
                     }
                 }
             });
-            
+
             // Calories Chart
             const caloriesCtx = document.getElementById('calories-chart').getContext('2d');
             const activityMultiplier = userData.steps >= 7500 ? 1.55 : (userData.steps >= 5000 ? 1.375 : 1.2);
             const tdee = Math.round(userData.bmr * activityMultiplier);
-            
+
             const caloriesChart = new Chart(caloriesCtx, {
                 type: 'bar',
                 data: {
@@ -1545,7 +1616,7 @@ include 'auth.php';?>
                     }
                 }
             });
-            
+
             // Water Intake Chart
             const waterCtx = document.getElementById('water-chart').getContext('2d');
             const waterChart = new Chart(waterCtx, {
@@ -1584,7 +1655,7 @@ include 'auth.php';?>
                     }
                 }
             });
-            
+
             // Sleep Chart
             const sleepCtx = document.getElementById('sleep-chart').getContext('2d');
             const sleepChart = new Chart(sleepCtx, {
@@ -1627,7 +1698,7 @@ include 'auth.php';?>
                     }
                 }
             });
-            
+
             // Nutrition Chart (Macronutrients)
             const nutritionCtx = document.getElementById('nutrition-chart').getContext('2d');
             const nutritionChart = new Chart(nutritionCtx, {
@@ -1635,6 +1706,8 @@ include 'auth.php';?>
                 data: {
                     labels: ['Protein', 'Carbs', 'Fats'],
                     datasets: [{
+                        <?php 
+                        $sql="SELECT * FROM " 
                         data: [25, 50, 25],
                         backgroundColor: [
                             'rgba(52, 152, 219, 0.7)',
@@ -1656,81 +1729,81 @@ include 'auth.php';?>
                 }
             });
         }
-        
+
         // Set water reminder
         function setWaterReminder() {
             // Show water reminder every 30 minutes
             setInterval(() => {
                 waterNotification.classList.add('show');
-                
+
                 // Hide notification after 10 seconds
                 setTimeout(() => {
                     waterNotification.classList.remove('show');
                 }, 10000);
             }, 1800000); // 30 minutes
-            
+
             // For demo purposes, show the first notification after 5 seconds
         }
 
-// Add food item
-document.getElementById("add-food-item").addEventListener("click", () => {
-    const container = document.getElementById("food-items-container");
-    const item = document.createElement("div");
-    item.classList.add("food-item");
-    item.innerHTML = `
+        // Add food item
+        document.getElementById("add-food-item").addEventListener("click", () => {
+            const container = document.getElementById("food-items-container");
+            const item = document.createElement("div");
+            item.classList.add("food-item");
+            item.innerHTML = `
         <input type="text" placeholder="Food item" class="food-name">
         <input type="number" placeholder="Calories" class="food-calories" min="0">
         <input type="number" placeholder="Portion (g)" class="food-portion" min="0">
         <button type="button" class="food-remove">×</button>
     `;
-    container.appendChild(item);
-});
+            container.appendChild(item);
+        });
 
-// Remove food item
-document.getElementById("food-items-container").addEventListener("click", function(e) {
-    if (e.target.classList.contains("food-remove")) {
-        e.target.parentElement.remove();
-    }
-});
+        // Remove food item
+        document.getElementById("food-items-container").addEventListener("click", function(e) {
+            if (e.target.classList.contains("food-remove")) {
+                e.target.parentElement.remove();
+            }
+        });
 
-// Save meal
-document.getElementById("save-meal").addEventListener("click", () => {
-    const mealType = document.getElementById("meal-type").value;
-    const foodItems = Array.from(document.querySelectorAll(".food-item")).map(item => {
-        return {
-            name: item.querySelector(".food-name").value,
-            calories: item.querySelector(".food-calories").value,
-            portion: item.querySelector(".food-portion").value
-        };
-    });
+        // Save meal
+        document.getElementById("save-meal").addEventListener("click", () => {
+            const mealType = document.getElementById("meal-type").value;
+            const foodItems = Array.from(document.querySelectorAll(".food-item")).map(item => {
+                return {
+                    name: item.querySelector(".food-name").value,
+                    calories: item.querySelector(".food-calories").value,
+                    portion: item.querySelector(".food-portion").value
+                };
+            });
 
-    // Optional: Validate inputs here
+            // Optional: Validate inputs here
 
-    // Prepare data to send
-    const data = {
-        mealType,
-        foodItems
-    };
+            // Prepare data to send
+            const data = {
+                mealType,
+                foodItems
+            };
 
-    // Send to savemeal.php
-    fetch('savemeal.php', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-    }).then(response => response.text())
-      .then(result => {
-          alert("Meal saved successfully!");
-          console.log(result);
-          // Optionally: clear form or update history
-      })
-      .catch(error => {
-          console.error('Error saving meal:', error);
-          alert("Failed to save meal.");
-      });
-});
-        
-        </script>
-        </body>
-        </html>
+            // Send to savemeal.php
+            fetch('savemeal.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                }).then(response => response.text())
+                .then(result => {
+                    alert("Meal saved successfully!");
+                    console.log(result);
+                    // Optionally: clear form or update history
+                })
+                .catch(error => {
+                    console.error('Error saving meal:', error);
+                    alert("Failed to save meal.");
+                });
+        });
+    </script>
+</body>
+
+</html>

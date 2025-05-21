@@ -1,6 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -63,15 +63,20 @@
         }
 
         @keyframes float {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: translateY(0) rotate(0deg);
             }
+
             25% {
                 transform: translateY(-20px) rotate(5deg);
             }
+
             50% {
                 transform: translateY(0) rotate(0deg);
             }
+
             75% {
                 transform: translateY(20px) rotate(-5deg);
             }
@@ -291,7 +296,8 @@
             animation: pulse 1.5s ease infinite;
         }
 
-        .heart::before, .heart::after {
+        .heart::before,
+        .heart::after {
             content: '';
             width: 100px;
             height: 100px;
@@ -383,24 +389,32 @@
         }
 
         @keyframes pulse {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: rotate(-45deg) scale(1);
             }
+
             50% {
                 transform: rotate(-45deg) scale(1.1);
             }
         }
 
         @keyframes heartBeat {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
             }
+
             15% {
                 transform: scale(1.2);
             }
+
             30% {
                 transform: scale(1);
             }
+
             45% {
                 transform: scale(1.2);
             }
@@ -411,6 +425,7 @@
             from {
                 opacity: 0;
             }
+
             to {
                 opacity: 1;
             }
@@ -421,6 +436,7 @@
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
@@ -565,6 +581,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- Background Circles -->
     <div class="bg-circles">
@@ -585,38 +602,52 @@
         <!-- Main Content -->
         <div class="main-content">
             <div class="welcome-text">
-                <h1>Hello! I'm your <span class="highlight">health tracker</span></h1>
+                <h1>Hello! I'm your <span class="highlight">health tracker </span></h1>
                 <p>I am a health tracker that monitors your fitness metrics like BMI, BMR, blood pressure, and oxygen levels to help you stay on top of your health goals.</p>
             </div>
 
             <div class="features">
-			    <a href="dashboard.php" style="text-decoration: none; color: inherit;">
+                <a href="dashboard.php" style="text-decoration: none; color: inherit;">
+                    <div class="feature-card">
+                        <div class="feature-icon">📊</div>
+                        <h3>Monitor Metrics</h3>
+                        <p>Track your BMI, BMR, blood pressure, oxygen levels and more in one place with easy-to-read charts.</p>
+                    </div>
+                </a>
                 <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3>Monitor Metrics</h3>
-                    <p>Track your BMI, BMR, blood pressure, oxygen levels and more in one place with easy-to-read charts.</p>
+                    <a href="goals.php" style="text-decoration: none; color: inherit;">
+                        <div class="feature-icon">🎯</div>
+                        <h3>Set Goals</h3>
+                        <p>Create personalized health goals and track your progress with customizable milestones.</p>
                 </div>
-				</a>
-                <div class="feature-card">
-				<a href="goals.php" style="text-decoration: none; color: inherit;">
-                    <div class="feature-icon">🎯</div>
-                    <h3>Set Goals</h3>
-                    <p>Create personalized health goals and track your progress with customizable milestones.</p>
-                </div>
-				<a href="chatbot.php" style="text-decoration: none; color: inherit;">
-                <div class="feature-card">
-                    <div class="feature-icon">📱</div>
-                    <h3>Stay Connected</h3>
-                    <p>Get notifications and insights about your health metrics anywhere, anytime.</p>
-                </div>
-				</a>
+                <a href="chatbot.php" style="text-decoration: none; color: inherit;">
+                    <div class="feature-card">
+                        <div class="feature-icon">📱</div>
+                        <h3>Stay Connected</h3>
+                        <p>Get notifications and insights about your health metrics anywhere, anytime.</p>
+                    </div>
+                </a>
             </div>
+            <?php if (isset($_SESSION['user_id'])) {
+            ?>
+                <div class="auth-buttons">
+                    <a href="login.php"><button class="btn btn-primary" id="login-btn">LOGIN</button></a>
+                    <a href="signup.php"><button class="btn btn-secondary" id="signup-btn">SIGN UP</button></a>
+                </div>
+            <?php
+            } else {
+            ?>
+                <div class="auth-buttons">
+                    <a href="logout.php"><button class="btn btn-primary" id="login-btn">Logout </button></a>
 
-            <div class="auth-buttons">
-                <a href="login.php"><button class="btn btn-primary" id="login-btn">LOGIN</button></a>
-                <a href="signup.php"><button class="btn btn-secondary" id="signup-btn">SIGN UP</button></div></a>
-            </div>
+                </div>
+            <?php
+            }
+            ?>
+
+
         </div>
+    </div>
     </div>
 
     <!-- Heart Animation -->

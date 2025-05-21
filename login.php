@@ -289,6 +289,10 @@
                     <span>Don't have an account?</span>
                     <a href="signup.php">Register</a>
                 </div>
+                <div class="login-footer">
+                    <span></span>
+                    <a href="/admin">Admin Login</a>
+                </div>
             </div>
         </div>
     </div>
