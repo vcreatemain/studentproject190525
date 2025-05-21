@@ -11,11 +11,12 @@ if ($name && $email && $password) {
 
     $stmt = $conn->prepare("INSERT INTO users (name, email, password) VALUES (?, ?, ?)");
     $stmt->bind_param("sss", $name, $email, $hashedPassword);
-
+    echo "User already exists, please login, <a href=\"/login.php\">Click here to login</a>";
     if ($stmt->execute()) {
         $_SESSION['user_id'] = $stmt->insert_id;
         header("Location: dashboard.php");
     } else {
+    
         echo "Error: " . $stmt->error;
     }
     $stmt->close();
