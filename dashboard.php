@@ -3,7 +3,7 @@
 include 'auth.php';
 include 'db.php';
 
-$userid = $_COOKIE['user_id'];
+$userid = $_SESSION['user_id'];
 $sql = "SELECT steps FROM user_health_data WHERE userid = '$userid' ORDER BY submission_date DESC LIMIT 7";
 $result = $conn->query($sql);
 
@@ -715,36 +715,38 @@ $stepsdata =  json_encode($steps);
             background: #f39c12;
             width: 0;
             transition: width 1s ease;
-        }     .btn-home {
-    background-color: var(--teal);
-    color: white;
-    text-decoration: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    margin-top: 15px;
-    display: inline-flex;
-    align-items: center;
-    font-weight: 500;
-    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
+        }
 
-.btn-home:hover {
-    background-color: var(--light-teal);
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
+        .btn-home {
+            background-color: var(--teal);
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            display: inline-flex;
+            align-items: center;
+            font-weight: 500;
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
 
-.btn-home i {
-    margin-right: 8px;
-}
+        .btn-home:hover {
+            background-color: var(--light-teal);
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
 
-@media (max-width: 768px) {
-    .btn-home {
-        padding: 8px 16px;
-        font-size: 0.9rem;
-    }
-}
+        .btn-home i {
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            .btn-home {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+        }
     </style>
 </head>
 
@@ -764,13 +766,19 @@ $stepsdata =  json_encode($steps);
                 <div class="form-row">
                     <div class="form-group">
                         <label for="name">Full Name</label>
-                        <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                        <input type="text" id="name" name="name" placeholder="Enter your name" required pattern="[A-Za-z\s]+" title="Only letters and spaces are allowed">
+
                     </div>
                     <div class="form-group">
                         <label for="age">Age</label>
                         <input type="number" id="age" name="age" placeholder="Enter your age" min="1" max="120" required>
                     </div>
                 </div>
+                <script>
+                    document.getElementById('name').addEventListener('input', function() {
+                        this.value = this.value.replace(/[^A-Za-z\s]/g, '');
+                    });
+                </script>
 
                 <div class="form-row">
                     <div class="form-group">
@@ -1020,8 +1028,8 @@ $stepsdata =  json_encode($steps);
                                 </thead>
                                 <tbody id="meal-history-table">
                                     <!-- Meal history will be populated here -->
-                                 <?php
-include 'db.php';
+                                    <?php
+                                    include 'db.php';
                                     $today = date('Y-m-d');
 
                                     $sql = "SELECT m.meal_type, f.food_name, f.calories, f.portion
@@ -1706,8 +1714,6 @@ include 'db.php';
                 data: {
                     labels: ['Protein', 'Carbs', 'Fats'],
                     datasets: [{
-                        <?php 
-                        $sql="SELECT * FROM " 
                         data: [25, 50, 25],
                         backgroundColor: [
                             'rgba(52, 152, 219, 0.7)',
@@ -1777,7 +1783,11 @@ include 'db.php';
                 };
             });
 
-            // Optional: Validate inputs here
+            // Optional: Validate inputs
+            if (!mealType || foodItems.some(item => !item.name || !item.calories || !item.portion)) {
+                alert("Please fill in all fields for all food items.");
+                return;
+            }
 
             // Prepare data to send
             const data = {
@@ -1792,11 +1802,37 @@ include 'db.php';
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(data)
-                }).then(response => response.text())
+                })
+                .then(response => response.text())
                 .then(result => {
                     alert("Meal saved successfully!");
                     console.log(result);
-                    // Optionally: clear form or update history
+
+                    // Append to meal history table
+                    const tableBody = document.getElementById("meal-history-table");
+                    foodItems.forEach(item => {
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                <td>${mealType.charAt(0).toUpperCase() + mealType.slice(1)}</td>
+                <td>${item.name}</td>
+                <td>${item.calories}</td>
+                <td>${item.portion}</td>
+            `;
+                        tableBody.insertBefore(row, tableBody.firstChild); // Add new rows at the top
+                    });
+
+                    // Clear form inputs
+                    document.querySelectorAll(".food-item").forEach((item, index) => {
+                        if (index === 0) {
+                            // Reset first food item inputs
+                            item.querySelector(".food-name").value = "";
+                            item.querySelector(".food-calories").value = "";
+                            item.querySelector(".food-portion").value = "";
+                        } else {
+                            // Remove additional food items
+                            item.remove();
+                        }
+                    });
                 })
                 .catch(error => {
                     console.error('Error saving meal:', error);

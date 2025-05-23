@@ -47,7 +47,7 @@ try {
     $stmt->close();
 
     // Insert food items
-    $query = "INSERT INTO meal_food_items (meal_id, food_name, calories, portion) VALUES (?, ?, ?, ?)";
+    $query = "INSERT INTO meal_food_items (`meal_id`, `food_name`, `calories`, `portion`) VALUES (?, ?, ?, ?)";
     $stmt = $mysqli->prepare($query);
     foreach ($foodItems as $item) {
         $foodName = $item['name'];

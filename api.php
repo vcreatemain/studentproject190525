@@ -2,9 +2,9 @@
 header('Content-Type: application/json');
 
 // Enable error logging
-ini_set('display_errors', 0); // Disable display to prevent corrupting JSON
+ini_set('display_errors', 0);
 ini_set('log_errors', 1);
-ini_set('error_log', '/path/to/php_errors.log'); // Replace with your log path, e.g., /var/log/php_errors.log
+ini_set('error_log', '/path/to/php_errors.log');
 error_reporting(E_ALL);
 
 include 'db.php';
@@ -24,7 +24,6 @@ switch ($action) {
             while ($row = $result->fetch_assoc()) {
                 $row['target_value'] = json_decode($row['target_value'], true) ?? $row['target_value'];
                 $row['progress'] = json_decode($row['progress'], true) ?? ['current_value' => 0];
-                // Fetch sub-tasks or habits
                 if ($row['goal_type'] === 'check' && ($row['category'] === 'mental' || $row['category'] === 'habits')) {
                     $subStmt = $conn->prepare("SELECT * FROM sub_tasks WHERE goal_id = ? ORDER BY id");
                     $subStmt->bind_param('s', $row['id']);
@@ -39,7 +38,7 @@ switch ($action) {
                         ];
                     }
                     $subStmt->close();
-                    $row[$row['category'] === 'habits' ? 'habits' : 'sub_tasks'] = $subTasks;
+                    $row['sub_tasks'] = $subTasks;
                 }
                 $goals[] = $row;
             }
@@ -100,8 +99,8 @@ switch ($action) {
                 $progress['carbs'] = ($progress['carbs'] ?? 0) + $carbs;
                 $progress['fats'] = ($progress['fats'] ?? 0) + $fats;
             } else if ($type === 'check') {
-                $progress['is_completed'] = true;
-                $streak++;
+                $progress['is_completed'] = (bool)($_POST['value'] ?? 0);
+                $streak = $progress['is_completed'] ? $streak + 1 : max(0, $streak - 1);
             } else {
                 $value = (int)($_POST['value'] ?? 0);
                 $progress['current_value'] = ($progress['current_value'] ?? 0) + $value;
@@ -116,9 +115,8 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
 
-            // Log history
             $historyStmt = $conn->prepare("INSERT INTO history (goal_id, current_value, date) VALUES (?, ?, NOW())");
-            $historyValue = json_encode($type === 'check' ? ['is_completed' => true] : $progress);
+            $historyValue = json_encode($type === 'check' ? ['is_completed' => $progress['is_completed']] : $progress);
             $historyStmt->bind_param('ss', $goalId, $historyValue);
             $historyStmt->execute();
             $historyStmt->close();
@@ -136,8 +134,7 @@ switch ($action) {
         $subTaskIndex = (int)($_POST['sub_task_index'] ?? -1);
         $isCompleted = filter_var($_POST['is_completed'], FILTER_VALIDATE_BOOLEAN);
         try {
-            // Fetch sub-task by index
-            $subStmt = $conn->prepare("SELECT id FROM sub_tasks WHERE goal_id = ? ORDER BY id LIMIT ?, 1");
+            $subStmt = $conn->prepare("SELECT id, streak FROM sub_tasks WHERE goal_id = ? ORDER BY id LIMIT ?, 1");
             $subStmt->bind_param('si', $goalId, $subTaskIndex);
             $subStmt->execute();
             $subResult = $subStmt->get_result();
@@ -151,13 +148,12 @@ switch ($action) {
             }
 
             $subTaskId = $subTask['id'];
-            $updateStmt = $conn->prepare("UPDATE sub_tasks SET is_completed = ?, streak = streak + ? WHERE id = ?");
-            $increment = $isCompleted ? 1 : 0;
-            $updateStmt->bind_param('iii', $isCompleted, $increment, $subTaskId);
+            $streak = $isCompleted ? $subTask['streak'] + 1 : max(0, $subTask['streak'] - 1);
+            $updateStmt = $conn->prepare("UPDATE sub_tasks SET is_completed = ?, streak = ? WHERE id = ?");
+            $updateStmt->bind_param('iii', $isCompleted, $streak, $subTaskId);
             $updateStmt->execute();
             $updateStmt->close();
 
-            // Update goal streak if all sub-tasks are completed
             $countStmt = $conn->prepare("SELECT COUNT(*) as total, SUM(is_completed) as completed FROM sub_tasks WHERE goal_id = ?");
             $countStmt->bind_param('s', $goalId);
             $countStmt->execute();
@@ -168,6 +164,12 @@ switch ($action) {
             if ($counts['total'] === $counts['completed']) {
                 $streakStmt = $conn->prepare("UPDATE goals SET streak = streak + 1, progress = ? WHERE id = ?");
                 $progress = json_encode(['is_completed' => true]);
+                $streakStmt->bind_param('ss', $progress, $goalId);
+                $streakStmt->execute();
+                $streakStmt->close();
+            } else {
+                $streakStmt = $conn->prepare("UPDATE goals SET progress = ? WHERE id = ?");
+                $progress = json_encode(['is_completed' => false]);
                 $streakStmt->bind_param('ss', $progress, $goalId);
                 $streakStmt->execute();
                 $streakStmt->close();
@@ -203,43 +205,11 @@ switch ($action) {
             $stmt->execute();
             $stmt->close();
 
-            // Add default sub-tasks for Mindfulness Practice
-            if ($title === 'Mindfulness Practice' && $category === 'mental') {
-                $subTasks = [
-                    ['name' => 'Morning mindfulness (5 min)', 'is_completed' => 0, 'streak' => 0],
-                    ['name' => 'Mindful eating during lunch', 'is_completed' => 0, 'streak' => 0],
-                    ['name' => 'Evening reflection (5 min)', 'is_completed' => 0, 'streak' => 0]
-                ];
-                $subStmt = $conn->prepare("INSERT INTO sub_tasks (goal_id, name, is_completed, streak) VALUES (?, ?, ?, ?)");
-                foreach ($subTasks as $task) {
-                    $subStmt->bind_param('ssii', $id, $task['name'], $task['is_completed'], $task['streak']);
-                    $subStmt->execute();
-                }
-                $subStmt->close();
-            }
-
             echo json_encode(['success' => true, 'id' => $id]);
         } catch (Exception $e) {
             error_log("create_goal error: " . $e->getMessage());
             http_response_code(500);
             echo json_encode(['error' => 'Failed to create goal']);
-        }
-        break;
-
-    case 'add_habit':
-        $goalId = $_POST['goal_id'] ?? '';
-        $name = $_POST['name'] ?? '';
-        $target = (int)($_POST['target'] ?? 30);
-        try {
-            $stmt = $conn->prepare("INSERT INTO sub_tasks (goal_id, name, is_completed, streak) VALUES (?, ?, 0, 0)");
-            $stmt->bind_param('ss', $goalId, $name);
-            $stmt->execute();
-            $stmt->close();
-            echo json_encode(['success' => true]);
-        } catch (Exception $e) {
-            error_log("add_habit error: " . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => 'Failed to add habit']);
         }
         break;
 
@@ -309,3 +279,4 @@ switch ($action) {
 }
 
 $conn->close();
+?>
